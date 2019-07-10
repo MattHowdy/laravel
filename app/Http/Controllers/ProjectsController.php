@@ -11,7 +11,6 @@ use App\Mail\ProjectCreated;
 
 class ProjectsController extends Controller
 {
-
     public function __construct()
     {
         // $this->middleware('auth')->only(['index', 'store']);    
@@ -27,13 +26,13 @@ class ProjectsController extends Controller
         // auth()->check();
         // auth()->guest();
 
-        $projects = Project::where('owner_id', auth()->id())->get();
-        $projects = Project::where('owner_id', auth()->id())->get();
+        // $projects = Project::where('owner_id', auth()->id())->get();        
+        $projects = auth()->user()->projects;
         
         //set something for cache
-        cache()->rememberForever( 'stats', function(){
-            return ['lessons' => 1300, 'hours'=>100, 'series'=>10];
-        });
+        // cache()->rememberForever( 'stats', function(){
+        //     return ['lessons' => 1300, 'hours'=>100, 'series'=>10];
+        // });
 
         //get from cache
         // $stats = cache()->get('stats');
@@ -50,22 +49,19 @@ class ProjectsController extends Controller
 
     public function store()
     {
-        $attributes = request()->validate([
+        
+        $attributes = $this->validateProject();
+        $attributes['owner_id'] = auth()->id();
+        $project = Project::create($attributes);
 
-            'title' => ['required', 'min:3', 'max:255'],
-            'description' => ['required', 'min:3'],
-        ]);
-
-        $project = Project::create($attributes + ['owner_id' => auth()->id()]);
-
-        \Mail::to('mate@gmail.com')->send(
+        \Mail::to($project->owner->email)->send(
             new ProjectCreated($project)
         );
         return redirect('/projects');
     }
 
 
-    public function show(Project $project, Twitter $twitter)
+    public function show(Project $project)
     {
         // $twitter = app('twitter');
         // dd($twitter);
@@ -78,8 +74,8 @@ class ProjectsController extends Controller
         // }
         // if(\Gate::allows)
 
-        // auth()->user()->can('update', $project);
-        $this->authorize('update', $project);
+        //auth()->user()->can('update', $project);
+        // $this->authorize('update', $project);
         return view('projects.show', compact('project'));
     }
 
@@ -92,8 +88,10 @@ class ProjectsController extends Controller
 
     public function update(Project $project)
     {
-        $this->authorize('update', $project);
-        $project->update(request(['title', 'description']));
+     
+
+        // $this->authorize('update', $project);
+        $project->update($this->validateProject());
         return redirect('/projects');
     }
 
@@ -103,4 +101,12 @@ class ProjectsController extends Controller
         return redirect('/projects');
     }
 
+
+    public function validateProject()
+    {
+        return request()->validate([
+            'title' => ['required', 'min:3'],
+            'description' => ['required', 'min:3']
+        ]);
+    }
 }

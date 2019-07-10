@@ -3,6 +3,7 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Project extends Model
 {
@@ -22,5 +23,11 @@ class Project extends Model
         //     'description' => $description
         // ]);
     }
+
+    public function owner()
+    {
+        return $this->belongsTo(User::class);
+    }
+
 }
 
