@@ -7,7 +7,7 @@ use App\Project;
 use Illuminate\Filesystem\Filesystem;
 use App\Services\Twitter;
 use App\Mail\ProjectCreated;
-
+use App\Events\ProjectWasPublished;
 
 class ProjectsController extends Controller
 {
@@ -49,14 +49,15 @@ class ProjectsController extends Controller
 
     public function store()
     {
-        
+        // validate project
         $attributes = $this->validateProject();
         $attributes['owner_id'] = auth()->id();
+
+        // persist project
         $project = Project::create($attributes);
 
-        \Mail::to($project->owner->email)->send(
-            new ProjectCreated($project)
-        );
+        // fire an event
+        event(new ProjectWasPublished($project));
         return redirect('/projects');
     }
 
